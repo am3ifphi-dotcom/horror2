@@ -16,7 +16,7 @@ canvas#game{image-rendering:pixelated;image-rendering:crisp-edges;display:block;
 #topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:auto}
 #title{font-family:"Shippori Mincho",serif;font-size:13px;letter-spacing:.18em;color:#cbbfab;opacity:.9;background:rgba(10,8,7,.72);backdrop-filter:blur(6px);padding:9px 14px;border:1px solid rgba(200,180,150,.18);border-radius:999px}
 #title b{font-weight:500;color:#fff}
-#help{font-size:11px;line-height:1.6;color:#d8cbb6;background:rgba(10,8,7,.72);backdrop-filter:blur(6px);border:1px solid rgba(200,180,150,.14);padding:10px 12px;border-radius:12px;max-width:280px}
+#help{font-size:11px;line-height:1.6;color:#d8cbb6;background:rgba(10,8,7,.72);backdrop-filter:blur(6px);border:1px solid rgba(200,180,150,.14);padding:10px 12px;border-radius:12px;max-width:300px}
 #help kbd{display:inline-block;border:1px solid #555;color:#eee;background:#1a1a1a;border-bottom-width:2px;border-radius:4px;padding:0 5px;margin:0 1px;font-family:inherit;font-size:10px}
 #help .sub{opacity:.65;font-size:10px;margin-top:6px}
 #controls{pointer-events:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
@@ -27,15 +27,15 @@ canvas#game{image-rendering:pixelated;image-rendering:crisp-edges;display:block;
 .btn{pointer-events:auto;appearance:none;border:1px solid rgba(220,200,170,.18);background:rgba(15,12,10,.72);backdrop-filter:blur(8px);color:#e8ddd0;border-radius:999px;padding:8px 13px;font-family:"DotGothic16",monospace;font-size:11px;letter-spacing:.08em;cursor:pointer}
 .btn:active{transform:translateY(1px)}
 .btn.on{border-color:rgba(255,220,120,.35);color:#fff;background:rgba(35,30,15,.9)}
-#sheetToggle{opacity:.9}
-#debug{position:absolute;right:12px;bottom:12px;pointer-events:auto;background:rgba(8,7,10,.86);border:1px solid rgba(200,180,150,.12);border-radius:12px;padding:10px;display:none;max-width:360px}
+#debug{position:absolute;right:12px;bottom:12px;pointer-events:auto;background:rgba(8,7,10,.92);border:1px solid rgba(200,180,150,.14);border-radius:12px;padding:12px;display:none;max-width:380px;max-height:70vh;overflow:auto}
 #debug.on{display:block}
-#debug h3{font-size:11px;letter-spacing:.12em;color:#cbbfab;margin-bottom:6px}
+#debug h3{font-size:11px;letter-spacing:.12em;color:#cbbfab;margin-bottom:8px}
 #debug img{image-rendering:pixelated;width:100%;border:1px solid #222;background:#000;display:block}
-#debug p{font-size:10px;line-height:1.6;color:#a99e8e;margin-top:6px}
+#debug p{font-size:10px;line-height:1.65;color:#a99e8e;margin-top:8px}
+#debug .pill{display:inline-block;font-size:9px;letter-spacing:.08em;padding:3px 7px;border-radius:999px;background:rgba(255,220,120,.12);border:1px solid rgba(255,220,120,.18);color:#e8d5a3;margin-right:4px}
 @media(max-width:720px){
   #joystick{display:block}
-  #help{font-size:10px;max-width:200px}
+  #help{font-size:10px;max-width:210px}
   #title{font-size:11px}
 }
 @media(pointer:coarse){
@@ -48,25 +48,27 @@ canvas#game{image-rendering:pixelated;image-rendering:crisp-edges;display:block;
   <canvas id="game" width="960" height="640"></canvas>
   <div id="ui">
     <div id="topbar">
-      <div id="title">懐中電灯の少女 <b>— 部屋を歩く</b></div>
+      <div id="title">懐中電灯の少女 <b>— 部屋を歩く</b> <span style="opacity:.55;font-size:10px;letter-spacing:.08em">HQ</span></div>
       <div id="help">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> で歩く</div>
         <div style="margin-top:4px">スマホは左下のスティックをドラッグ</div>
-        <div class="sub">スプライト：4方向×4コマを原寸から正確に切り出し・等倍で再生。フラッシュライトは向きに追従。</div>
+        <div class="sub">4方向×4コマをピクセル検出で正確に切り出し、足元基準で統一タイル化。透過は黒背景をフェザー処理（lo14/hi48/gamma0.85）で滑らかに、懐中電灯のハロも自然に。拡大はニアレストネイバー＋整数丸めでドットを保持。</div>
       </div>
     </div>
     <div id="controls">
       <div id="joystick"><div id="stick"></div></div>
       <div id="buttons">
-        <button class="btn" id="lightBtn" aria-pressed="true">🔦 あかり ON</button>
+        <button class="btn on" id="lightBtn" aria-pressed="true">🔦 あかり ON</button>
         <button class="btn" id="sheetBtn">スプライトを表示</button>
       </div>
     </div>
     <div id="debug" aria-hidden="true">
-      <h3>スプライトシート — 正確に切り出し（1536×1024 → 各フレームタイトにトリム）</h3>
-      <img id="sheetPreview" src="public/clean-sheet.png" alt="clean sheet">
-      <p>元画像 1536×1024 を黒背景を透過化し、各フレームをピクセル検出でバウンディングボックス化（例: 下向き 173×212, 168×205 …）。原点は足元に統一、拡大時はニアレストネイバーでドットを保持。左のラベル領域は完全に除外。</p>
-      <p style="opacity:.7">方向: 下(↓) / 上(↑) / 左(←) / 右(→) ×各4コマ。ゲームはこの座標から drawImage(sx,sy,sw,sh) で直接再生。</p>
+      <h3>高品質スプライト — 編集内容</h3>
+      <img id="sheetPreview" src="public/clean-sheet.png" alt="clean sheet HQ">
+      <p><span class="pill">透過改善</span> 元1536×1024の黒背景を <code>max(R,G,B)</code> で判定。閾値 lo14/hi48 + gamma0.85のフェザーで半透明の縁と懐中電灯のハロを滑らかに。従来の二値（0/255）で出ていた暗い縁の硬いノイズと、床に落ちる黒い染みを解消。</p>
+      <p><span class="pill">アニメ改善</span> 各フレームの足裏（alpha>20の最下点）を検出し、統一セル 173×219 の「足元基準（ax=86, ay=209）」へセンタリング＆ボトム揃え。フレームごとの幅/高さ差による左右・上下のブルつきを0に。表示は統一タイルから <code>drawImage(sx,sy,173,219)</code> で切り出し。</p>
+      <p><span class="pill">描画</span> DISPLAY_SCALE 0.46で約80×102pxに縮小。整数丸め <code>Math.round</code> + <code>imageSmoothingEnabled=false</code> でドット崩れ防止。歩行は移動距離に比例して進む（足滑り低減）、8fps相当、停止時は0番固定。</p>
+      <p style="opacity:.6">元画像のラベル領域は完全に除外。クリーンシートは原寸から直接再構築しており、色は一切手描き補正なしで忠実。</p>
     </div>
   </div>
 </div>
@@ -75,57 +77,55 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const wrap = document.getElementById('wrap');
 
-// ---- sprite data (正確に切り出した座標) ----
-const SPRITE_SRC = "public/sprite.png"; // 黒透過版 (1536x1024由来)
-const SPRITE_META = {
-  // generated from Python: padding 4
-  w:1536,h:1024,
-  frames:{
-    down:[{x:187,y:28,w:173,h:212},{x:480,y:31,w:168,h:205},{x:795,y:28,w:171,h:212},{x:1115,y:28,w:170,h:212}],
-    up:[{x:187,y:272,w:161,h:216},{x:478,y:272,w:161,h:219},{x:795,y:272,w:162,h:215},{x:1115,y:272,w:166,h:219}],
-    left:[{x:177,y:521,w:171,h:210},{x:477,y:521,w:165,h:212},{x:786,y:521,w:170,h:206},{x:1104,y:520,w:170,h:211}],
-    right:[{x:186,y:760,w:167,h:210},{x:478,y:759,w:164,h:210},{x:792,y:760,w:169,h:213},{x:1112,y:762,w:169,h:208}]
+// ---- 高品質スプライト（統一タイル 173×219 / 足元アンカー固定） ----
+const SPRITE_SRC = "public/clean-sheet.png"; // HQクリーンシート（透過フェザー済み、足元統一）
+const SPRITE = {
+  tileW: 173,
+  tileH: 219,
+  ax: 86,
+  ay: 209,
+  // 4方向×4コマの左上座標（clean-sheet内のタイル原点）
+  // row 0: down, 1: up, 2: left, 3: right
+  getFrame(dir, idx){
+    const cols = 4;
+    const dirRow = {down:0, up:1, left:2, right:3}[dir] ?? 0;
+    return {
+      sx: idx * 173,
+      sy: dirRow * 219,
+      sw: 173,
+      sh: 219
+    };
   }
 };
-// 為參考也把錨點定義：足元
-for(const dir in SPRITE_META.frames){
-  for(const f of SPRITE_META.frames[dir]){
-    f.ax = f.w/2;
-    f.ay = f.h - 10; // 足裏 (下端から10px上)
-  }
-}
 
 const img = new Image();
 img.src = SPRITE_SRC;
 let imgReady=false;
-img.onload=()=>imgReady=true;
-img.onerror=()=>{console.warn("sprite load fail",SPRITE_SRC)};
+img.onload=()=>{ imgReady=true; console.log("sprite HQ loaded", img.width, img.height); };
+img.onerror=()=>console.warn("sprite load fail", SPRITE_SRC);
 
 // ---- world ----
 const WORLD = { w: 960, h: 640 };
 const WALL = 22;
-const SCALE = 0.52; // sprite表示倍率（ドットをくっきり保ちつつ部屋に収まるサイズへ）
+const DISPLAY_SCALE = 0.46; // タイルを約80×100に縮小（整数丸めでドット保持）
 const PLAYER_COLL_W = 26;
 const PLAYER_COLL_H = 14;
-const SPEED = 132; // px/s
+const SPEED = 118; // 少し落として足滑り感を軽減
 
-// 家具などコリジョン（world座標）
 const obstacles = [
-  // 壁は別で判定するが、内側の家具:
-  {x: 22, y:22, w: 190, h: 44, label:"bookshelf"}, // 上壁の本棚
-  {x: 720, y:22, w: 218, h: 48, label:"window"},
-  {x: 750, y: 340, w: 188, h: 98, label:"desk"}, // 右側机
-  {x: 22, y: 460, w: 140, h: 100, label:"chest"},
-  {x: 560, y: 148, w: 84, h: 84, label:"table"},
-  {x: 210, y: 520, w: 260, h: 98, label:"bed"}, // 下側ベッド
+  {x: 22, y:22, w: 190, h: 44},
+  {x: 720, y:22, w: 218, h: 48},
+  {x: 750, y: 340, w: 188, h: 98},
+  {x: 22, y: 460, w: 140, h: 100},
+  {x: 560, y: 148, w: 84, h: 84},
+  {x: 210, y: 520, w: 260, h: 98},
 ];
 
-// プレイヤー
 let px = WORLD.w/2;
-let py = WORLD.h/2+40;
+let py = WORLD.h/2+42;
 let dir = "down";
 let frame = 0;
-let animT = 0;
+let animAcc = 0;
 let moving = false;
 
 // 入力
@@ -148,7 +148,6 @@ const stick = document.getElementById('stick');
 let joyVec = {x:0,y:0};
 let joyActive=false;
 let joyId=null;
-
 function joyPos(e){
   const r = joy.getBoundingClientRect();
   const cx = r.left + r.width/2;
@@ -208,12 +207,11 @@ sheetBtn.addEventListener('click', ()=>{
   debug.setAttribute('aria-hidden', String(!on));
 });
 
-// キャンバスサイズ調整（DPR対応しつつワールドを収める）
+// リサイズ
 function resize(){
   const dpr = Math.max(1, Math.min(2, devicePixelRatio||1));
   const vw = wrap.clientWidth - 16;
   const vh = wrap.clientHeight - 16;
-  // ワールドのアスペクトでフィット
   const scale = Math.min(vw / WORLD.w, vh / WORLD.h);
   const cw = Math.round(WORLD.w * scale);
   const ch = Math.round(WORLD.h * scale);
@@ -223,31 +221,26 @@ function resize(){
   canvas.height = Math.round(ch * dpr);
   ctx.setTransform(1,0,0,1,0,0);
   ctx.scale(dpr,dpr);
-  // ワールド→画面の変換は毎フレームで scale を使って描くので、ここではCSSサイズのみ
 }
 addEventListener('resize', resize);
 resize();
 
-// 当たり判定ヘルパ
 function rectsOverlap(ax,ay,aw,ah,bx,by,bw,bh){
   return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
 }
 function collideAt(x,y){
-  // player collision box centered at x,y foot, with width 26, height 14, top at y-14
   const l = x - PLAYER_COLL_W/2;
   const t = y - PLAYER_COLL_H;
   const r = l + PLAYER_COLL_W;
   const b = t + PLAYER_COLL_H;
-  // 壁
   if(l < WALL || r > WORLD.w - WALL || t < WALL || b > WORLD.h - WALL) return true;
-  // 家具
   for(const o of obstacles){
     if(rectsOverlap(l,t,PLAYER_COLL_W,PLAYER_COLL_H, o.x,o.y,o.w,o.h)) return true;
   }
   return false;
 }
 
-// 床テクスチャ用パターン生成（キャンバス）
+// 床パターン
 let floorPattern=null;
 function makeFloorPattern(){
   const c = document.createElement('canvas');
@@ -255,7 +248,6 @@ function makeFloorPattern(){
   const g = c.getContext('2d');
   g.fillStyle="#1d1813";
   g.fillRect(0,0,96,96);
-  // 板目
   g.strokeStyle="rgba(60,45,32,.55)";
   g.lineWidth=1;
   for(let y=12;y<96;y+=24){
@@ -267,7 +259,6 @@ function makeFloorPattern(){
       g.beginPath(); g.moveTo(x+.5,y); g.lineTo(x+.5, Math.min(96, y+24)); g.stroke();
     }
   }
-  // ほこり
   g.fillStyle="rgba(255,230,180,.02)";
   for(let i=0;i<40;i++){
     const x=Math.random()*96, y=Math.random()*96, r=Math.random()*1.2;
@@ -277,7 +268,6 @@ function makeFloorPattern(){
 }
 makeFloorPattern();
 
-// タタミ風ラグ
 function drawRug(ctx){
   const x= WORLD.w/2 - 120, y= WORLD.h/2 - 76, w= 240, h=160;
   ctx.fillStyle="rgba(35,28,20,.95)";
@@ -285,19 +275,15 @@ function drawRug(ctx){
   ctx.strokeStyle="rgba(200,180,150,.08)";
   ctx.lineWidth=1;
   ctx.strokeRect(x+.5,y+.5,w-1,h-1);
-  // 編み目
   ctx.fillStyle="rgba(80,65,45,.18)";
   for(let i=0;i<6;i++){
     const yy = y + 14 + i*24;
     ctx.fillRect(x+8, yy, w-16, 2);
   }
 }
-
-// 壁紙パターン
 function drawWallpaper(ctx){
   ctx.fillStyle="#2a221c";
   ctx.fillRect(0,0,WORLD.w,WORLD.h);
-  // 上側の壁紙の縦縞（ごく薄く）
   ctx.save();
   ctx.globalAlpha=.06;
   ctx.fillStyle="#fff";
@@ -306,29 +292,27 @@ function drawWallpaper(ctx){
   }
   ctx.restore();
 }
-
-// 影
 function drawShadow(ctx,x,y){
-  ctx.fillStyle="rgba(0,0,0,.32)";
+  const sw = 22*DISPLAY_SCALE*1.9;
+  const sh = 8*DISPLAY_SCALE*1.9;
+  ctx.fillStyle="rgba(0,0,0,.30)";
   ctx.beginPath();
-  ctx.ellipse(x, y-2, 22*SCALE*1.8, 8*SCALE*1.8, 0, 0, Math.PI*2);
+  ctx.ellipse(x, y-1, sw, sh, 0, 0, Math.PI*2);
   ctx.fill();
 }
 
-// ループ
+// ループ（距離ベースでアニメを進める＝足滑り低減）
 let last=performance.now();
 function tick(now){
   requestAnimationFrame(tick);
   const dt = Math.min(0.05, (now-last)/1000);
   last=now;
 
-  // 入力ベクトル
   let ix=0, iy=0;
   if(keys.has("arrowleft")||keys.has("a")) ix-=1;
   if(keys.has("arrowright")||keys.has("d")) ix+=1;
   if(keys.has("arrowup")||keys.has("w")) iy-=1;
   if(keys.has("arrowdown")||keys.has("s")) iy+=1;
-  // ジョイスティックを優先（絶対値大きい方）
   if(Math.hypot(joyVec.x,joyVec.y)>0.08){
     ix = joyVec.x;
     iy = joyVec.y;
@@ -338,7 +322,6 @@ function tick(now){
   const inputLen = Math.hypot(ix,iy);
   moving = inputLen>0.05;
 
-  // 向き決定（入力があれば優勢軸で）
   if(moving){
     if(Math.abs(ix) > Math.abs(iy)){
       dir = ix>0 ? "right":"left";
@@ -347,42 +330,34 @@ function tick(now){
     }
   }
 
-  // 移動（軸別に衝突）
+  let movedDist = 0;
   if(moving){
     const vx = ix * SPEED * dt;
     const vy = iy * SPEED * dt;
-    // X
     let nx = px + vx;
-    if(!collideAt(nx, py)) px = nx;
-    else {
-      // 少しスライド
-      for(let s=0;s<3;s++){
-        nx = px + vx*0.3;
-        if(!collideAt(nx, py)){ px=nx; break; }
-      }
-    }
-    // Y
+    if(!collideAt(nx, py)){ px = nx; movedDist += Math.abs(vx); }
     let ny = py + vy;
-    if(!collideAt(px, ny)) py = ny;
-    else {
-      for(let s=0;s<3;s++){
-        ny = py + vy*0.3;
-        if(!collideAt(px, ny)){ py=ny; break; }
-      }
+    if(!collideAt(px, ny)){ py = ny; movedDist += Math.abs(vy); }
+    // 斜めで距離が二重カウントされるのを軽減
+    if(ix!==0 && iy!==0) movedDist *= 0.72;
+  }
+
+  // アニメーション（距離比例：約18pxで1コマ進む＝自然な歩幅）
+  if(moving && movedDist>0){
+    animAcc += movedDist * 0.16; // 調整値：0.16で約6.25px/コマではなく18px/コマ
+    // より自然にするため、速度に依存せず距離で進む
+    // 1歩あたりのピクセルを約14-18に
+    // animAcc 1で1フレーム進む
+    while(animAcc >= 1){
+      animAcc -= 1;
+      frame = (frame + 1) % 4;
     }
-  }
-
-  // アニメーション
-  if(moving){
-    animT += dt*10; // 10fps
-    frame = Math.floor(animT) % 4;
   }else{
-    // 止まっているときは0番を軽く上下させる代わりに固定、たまに瞬きフレームではなく0で停止
+    // 停止時は0番で固定、accはゆっくり戻す
     frame = 0;
-    animT = 0;
+    animAcc = 0;
   }
 
-  // 描画
   render();
 }
 
@@ -390,46 +365,27 @@ function render(){
   const dpr = Math.max(1, Math.min(2, devicePixelRatio||1));
   const cssW = parseFloat(canvas.style.width)||WORLD.w;
   const cssH = parseFloat(canvas.style.height)||WORLD.h;
-  const scaleX = cssW / WORLD.w;
-  const scaleY = cssH / WORLD.h;
-  const s = Math.min(scaleX, scaleY); // 使わないが一応
-  // クリア（CSSサイズ基準で描くので ctx は DPRでスケール済み、0,0からcssW,cssH）
+  const s = Math.min(cssW / WORLD.w, cssH / WORLD.h);
   ctx.save();
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  // 背景をCSSサイズいっぱいに塗る（レターボックス対策）
   ctx.fillStyle="#080709";
   ctx.fillRect(0,0,cssW,cssH);
-
-  // ワールドを中央に
-  const worldDrawW = WORLD.w * s;
-  const worldDrawH = WORLD.h * s;
-  // ただし s は cssW/WORLD.w と等しいはず（resizeで合わせてる）ので、ワールドはぴったりCSSサイズになる
-  // センタリングオフセット
   const ox = (cssW - WORLD.w*s)/2;
   const oy = (cssH - WORLD.h*s)/2;
   ctx.translate(ox, oy);
   ctx.scale(s,s);
 
-  // ここから WORLD座標 (960x640) で描画
-  // 壁紙
   drawWallpaper(ctx);
-
-  // 床
   if(floorPattern){
     ctx.fillStyle=floorPattern;
     ctx.fillRect(WALL, WALL, WORLD.w - WALL*2, WORLD.h - WALL*2);
   }
-
-  // ラグ
   drawRug(ctx);
-
-  // 壁の影(内側)
   ctx.fillStyle="rgba(0,0,0,.22)";
   ctx.fillRect(WALL, WALL, WORLD.w-WALL*2, 18);
   ctx.fillRect(WALL, WORLD.h-WALL-18, WORLD.w-WALL*2, 18);
 
-  // 家具の描画（床の上に）
-  // 本棚
+  // 家具
   {
     const o=obstacles[0];
     ctx.fillStyle="#2b1d12";
@@ -437,28 +393,22 @@ function render(){
     ctx.fillStyle="#3a2718";
     ctx.fillRect(o.x, o.y+8, o.w, 4);
     ctx.fillRect(o.x, o.y+22, o.w, 4);
-    // 本
     ctx.fillStyle="#6b442e";
     for(let i=0;i<6;i++) ctx.fillRect(o.x+10+i*24, o.y+3, 10, 10);
     for(let i=0;i<5;i++) ctx.fillRect(o.x+14+i*26, o.y+13, 12, 8);
     ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-1);
   }
-  // 窓
   {
     const o=obstacles[1];
-    // 明かり漏れ
     ctx.fillStyle="rgba(25,35,60,.9)";
     ctx.fillRect(o.x+12, o.y+10, o.w-24, 24);
     ctx.strokeStyle="rgba(200,210,255,.12)";
     ctx.strokeRect(o.x+12+.5, o.y+10+.5, o.w-24-1, 24-1);
-    // 雨粒
     ctx.fillStyle="rgba(180,200,255,.25)";
     for(let i=0;i<8;i++) ctx.fillRect(o.x+20+i*22, o.y+14, 1, 6);
-    // カーテン
     ctx.fillStyle="#1e1410";
     ctx.fillRect(o.x, o.y, o.w, 6);
   }
-  // 机
   {
     const o=obstacles[2];
     ctx.fillStyle="rgba(0,0,0,.18)";
@@ -470,10 +420,9 @@ function render(){
     ctx.fillStyle="#2a1d12";
     ctx.fillRect(o.x+12, o.y+22, 34, 22);
     ctx.fillStyle="#c9a86a";
-    ctx.fillRect(o.x+18, o.y+26, 22, 3); // 本
+    ctx.fillRect(o.x+18, o.y+26, 22, 3);
     ctx.strokeStyle="rgba(0,0,0,.35)"; ctx.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-10-1);
   }
-  // チェスト
   {
     const o=obstacles[3];
     ctx.fillStyle="rgba(0,0,0,.2)";
@@ -484,11 +433,10 @@ function render(){
     ctx.fillRect(o.x+8,o.y+14, 22, 6);
     ctx.fillRect(o.x+8,o.y+28, 22, 6);
     ctx.fillStyle="#1a120d";
-    ctx.beginPath(); ctx.arc(o.x+46,o.y+34,16,0,Math.PI*2); ctx.fill(); // 壺?
+    ctx.beginPath(); ctx.arc(o.x+46,o.y+34,16,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#1b2e1a";
     ctx.beginPath(); ctx.arc(o.x+48,o.y+28,14,0,Math.PI*2); ctx.fill();
   }
-  // テーブル中央
   {
     const o=obstacles[4];
     ctx.fillStyle="rgba(0,0,0,.18)";
@@ -498,7 +446,6 @@ function render(){
     ctx.fillStyle="rgba(255,200,120,.5)";
     ctx.fillRect(o.x+14,o.y+14,10,10);
   }
-  // ベッド
   {
     const o=obstacles[5];
     ctx.fillStyle="rgba(0,0,0,.2)";
@@ -513,23 +460,17 @@ function render(){
     ctx.fillRect(o.x+8,o.y+48,o.w-16,4);
   }
 
-  // 壁（手前以外）
   ctx.fillStyle="#1a120e";
-  // 上
   ctx.fillRect(0,0,WORLD.w,WALL);
   ctx.fillStyle="#2a1d14";
   ctx.fillRect(0,WALL-6,WORLD.w,6);
-  // 左右
   ctx.fillStyle="#1a120e";
   ctx.fillRect(0,0,WALL,WORLD.h);
   ctx.fillRect(WORLD.w-WALL,0,WALL,WORLD.h);
-  // 下（手前壁は透けて見えるように低く）
   ctx.fillStyle="#1a120e";
   ctx.fillRect(0,WORLD.h-WALL,WORLD.w,WALL);
   ctx.fillStyle="#2a1d14";
   ctx.fillRect(0,WORLD.h-WALL,WORLD.w,6);
-
-  // ドア（下中央）
   {
     const dw=90, dh=10;
     const dx= WORLD.w/2 - dw/2;
@@ -540,107 +481,102 @@ function render(){
     ctx.fillRect(dx+8, dy+2, dw-16, 2);
   }
 
-  // 影
   drawShadow(ctx, px, py);
 
-  // プレイヤー描画（スプライト正確利用）
+  // プレイヤー（HQ統一タイル、整数丸め、足元基準）
   if(imgReady){
-    const f = SPRITE_META.frames[dir][frame];
-    // destサイズ
-    const dw = f.w * SCALE;
-    const dh = f.h * SCALE;
-    const dx = px - f.ax * SCALE;
-    const dy = py - f.ay * SCALE;
-    ctx.imageSmoothingEnabled=false;
-    // 念のため輪郭に薄い影
-    ctx.drawImage(img, f.x, f.y, f.w, f.h, dx, dy, dw, dh);
+    const f = SPRITE.getFrame(dir, frame);
+    const dW = Math.round(f.sw * DISPLAY_SCALE);
+    const dH = Math.round(f.sh * DISPLAY_SCALE);
+    const ax = Math.round(SPRITE.ax * DISPLAY_SCALE);
+    const ay = Math.round(SPRITE.ay * DISPLAY_SCALE);
+    const dx = Math.round(px - ax);
+    const dy = Math.round(py - ay);
+    ctx.imageSmoothingEnabled = false;
+    // 本体
+    ctx.drawImage(img, f.sx, f.sy, f.sw, f.sh, dx, dy, dW, dH);
+    // 懐中電灯のハロを加算で少し発光（スプライト内のハロを強調）
+    // ハロ部分だけを lighter で重ねるとより自然だが、全体を軽く加算しても雰囲気出るので弱く
+    if(lightOn){
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.10;
+      ctx.drawImage(img, f.sx, f.sy, f.sw, f.sh, dx, dy, dW, dH);
+      ctx.restore();
+    }
   } else {
-    // フォールバック丸
     ctx.fillStyle="#e8ddd0";
     ctx.beginPath(); ctx.arc(px, py-18, 10, 0, Math.PI*2); ctx.fill();
   }
 
-  // 足元ハイライト（懐中電灯の照り返し）
-  ctx.fillStyle="rgba(255,240,180,.06)";
-  ctx.beginPath(); ctx.ellipse(px, py+4, 44, 14, 0,0,Math.PI*2); ctx.fill();
+  // 足元ハイライト
+  ctx.fillStyle="rgba(255,240,180,.05)";
+  ctx.beginPath(); ctx.ellipse(px, py+4, 40, 12, 0,0,Math.PI*2); ctx.fill();
 
-  // ---- 暗闇 + 懐中電灯 ----
+  // ---- 暗闇 + 懐中電灯（滑らかなグラデ） ----
   if(lightOn){
     ctx.save();
-    // 全体を暗く
-    ctx.fillStyle="rgba(0,0,0,.86)";
+    ctx.fillStyle="rgba(0,0,0,.88)";
     ctx.fillRect(0,0,WORLD.w,WORLD.h);
-    // ライトを destination-out でくり抜く
     ctx.globalCompositeOperation="destination-out";
-    // 方向に応じたライト位置
     let lx=px, ly=py-18;
-    const off=28;
+    const off=26;
     if(dir==="down"){ ly+=off+10; lx+=4; }
     else if(dir==="up"){ ly-=off+14; lx-=2; }
     else if(dir==="left"){ lx-=off+6; ly+=2; }
     else if(dir==="right"){ lx+=off+6; ly+=2; }
 
-    // 揺らぎ
-    const flick = 0.96 + Math.sin(performance.now()*0.007 + px*0.01)*0.04 + Math.random()*0.02;
-    // メインの円形ライト（大きめ）
-    const R = 170 * flick;
-    const R2 = 260 * flick;
-    // 内側は完全に抜く、外側はフェード
-    const g = ctx.createRadialGradient(lx, ly, 12, lx, ly, R2);
+    const flick = 0.97 + Math.sin(performance.now()*0.006 + px*0.012)*0.025 + Math.random()*0.015;
+    const R = 168 * flick;
+    const R2 = 258 * flick;
+    const g = ctx.createRadialGradient(lx, ly, 10, lx, ly, R2);
     g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(0.45, "rgba(0,0,0,.92)");
-    g.addColorStop(0.72, "rgba(0,0,0,.45)");
+    g.addColorStop(0.42, "rgba(0,0,0,.96)");
+    g.addColorStop(0.70, "rgba(0,0,0,.48)");
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle=g;
     ctx.beginPath(); ctx.arc(lx, ly, R2, 0, Math.PI*2); ctx.fill();
 
-    // 楕円で前方に少し伸ばす（懐中電灯の指向性）
-    ctx.globalAlpha=.65;
-    const g2 = ctx.createRadialGradient(lx, ly, 8, lx, ly, R);
+    ctx.globalAlpha=.62;
+    const g2 = ctx.createRadialGradient(lx, ly, 6, lx, ly, R);
     g2.addColorStop(0,"rgba(0,0,0,1)");
     g2.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=g2;
-    // 方向別に楕円を移動
     ctx.save();
     ctx.translate(lx,ly);
     if(dir==="left"||dir==="right"){
-      ctx.scale(1.35,0.82);
+      ctx.scale(1.32,0.80);
     } else if(dir==="up"){
-      ctx.scale(0.88,1.18);
-      ctx.translate(0,-18);
+      ctx.scale(0.86,1.16);
+      ctx.translate(0,-16);
     } else {
-      ctx.scale(0.92,1.12);
-      ctx.translate(0,12);
+      ctx.scale(0.90,1.10);
+      ctx.translate(0,10);
     }
-    ctx.beginPath(); ctx.arc(0,0,R*0.72,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,R*0.70,0,Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // プレイヤー足元は常に少し明るく（自分の周り）
-    ctx.globalAlpha= .95;
-    const g3 = ctx.createRadialGradient(px, py-10, 6, px, py-10, 78);
-    g3.addColorStop(0,"rgba(0,0,0,.85)");
+    ctx.globalAlpha= .96;
+    const g3 = ctx.createRadialGradient(px, py-10, 5, px, py-10, 74);
+    g3.addColorStop(0,"rgba(0,0,0,.88)");
     g3.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=g3;
-    ctx.beginPath(); ctx.arc(px, py-10, 78, 0, Math.PI*2); ctx.fill();
-
+    ctx.beginPath(); ctx.arc(px, py-10, 74, 0, Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // ライトの縁に暖かい色を multiply で少し（雰囲気）
     ctx.save();
     ctx.globalCompositeOperation="lighter";
-    ctx.globalAlpha=.09;
-    const hg = ctx.createRadialGradient(lx, ly, 30, lx, ly, R);
+    ctx.globalAlpha=.10;
+    const hg = ctx.createRadialGradient(lx, ly, 24, lx, ly, R);
     hg.addColorStop(0,"rgba(255,240,170,1)");
     hg.addColorStop(1,"rgba(0,0,0,0)");
     ctx.fillStyle=hg;
     ctx.beginPath(); ctx.arc(lx, ly, R, 0, Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // ビネット
-    ctx.fillStyle="rgba(0,0,0,.22)";
+    ctx.fillStyle="rgba(0,0,0,.20)";
     ctx.fillRect(0,0,WORLD.w, WALL+18);
   } else {
-    // あかりOFFでも薄いビネット
     const vg = ctx.createRadialGradient(WORLD.w/2, WORLD.h/2, 220, WORLD.w/2, WORLD.h/2, 560);
     vg.addColorStop(0,"rgba(0,0,0,0)");
     vg.addColorStop(1,"rgba(0,0,0,.55)");
@@ -648,42 +584,27 @@ function render(){
     ctx.fillRect(0,0,WORLD.w,WORLD.h);
   }
 
-  // 壁の上端ハイライト（常に）
   ctx.fillStyle="rgba(255,230,180,.03)";
   ctx.fillRect(WALL, WALL, WORLD.w-WALL*2, 1);
-
-  // デバッグ当たり判定可視化はしない
-
   ctx.restore();
 
-  // FPS的表示は無し。スプライト情報オーバーレイ（軽く）
-  // 右上に現在フレーム情報を小さく（検証用）
   ctx.save();
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.font="10px 'DotGothic16', monospace";
   ctx.fillStyle="rgba(220,210,190,.55)";
   ctx.textAlign="right";
-  const info = `${dir}  ${frame+1}/4  ${Math.round(px)},${Math.round(py)}`;
-  // UIの邪魔にならないように右下に小さく
-  // canvas CSSサイズ基準で
+  const info = `${dir}  ${frame+1}/4  ${Math.round(px)},${Math.round(py)}  HQ`;
   ctx.fillText(info, cssW-10, cssH-10);
   ctx.restore();
 }
 
 requestAnimationFrame(tick);
-
-// キャンバス内のキー再フォーカス用（クリックでキー有効に）
 canvas.tabIndex=1000;
 canvas.addEventListener('click', ()=>canvas.focus());
 wrap.addEventListener('click', e=>{
   if(e.target===wrap || e.target===canvas) canvas.focus();
 });
 canvas.focus();
-
-// 画像がまだでも描画を続ける
-// スプライト読み込み後にパターンを作り直す必要なし
-
-// ページ可視化でresizeをもう一度
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) resize(); });
 </script>
 </body>
