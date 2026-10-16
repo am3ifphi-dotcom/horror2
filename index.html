@@ -49,10 +49,10 @@ canvas#game{image-rendering:pixelated;image-rendering:crisp-edges;display:block;
   <div id="ui">
     <div id="topbar">
       <div id="title">懐中電灯の少女 <b>— 部屋を歩く</b> <span style="opacity:.55;font-size:10px;letter-spacing:.08em">HQ</span></div>
-      <div id="help">
+            <div id="help">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> で歩く</div>
         <div style="margin-top:4px">スマホは左下のスティックをドラッグ</div>
-        <div class="sub">4方向×4コマをピクセル検出で正確に切り出し、足元基準で統一タイル化。透過は黒背景をフェザー処理（lo14/hi48/gamma0.85）で滑らかに、懐中電灯のハロも自然に。拡大はニアレストネイバー＋整数丸めでドットを保持。</div>
+        <div class="sub"><b>8フレーム化</b>：元4コマ→中間を生成し4方向×8コマに。透過はフェザー、足元基準で統一タイル（173×219）＆整数丸めでドット保持。</div>
       </div>
     </div>
     <div id="controls">
@@ -63,12 +63,12 @@ canvas#game{image-rendering:pixelated;image-rendering:crisp-edges;display:block;
       </div>
     </div>
     <div id="debug" aria-hidden="true">
-      <h3>高品質スプライト — 編集内容</h3>
-      <img id="sheetPreview" src="public/clean-sheet.png" alt="clean sheet HQ">
-      <p><span class="pill">透過改善</span> 元1536×1024の黒背景を <code>max(R,G,B)</code> で判定。閾値 lo14/hi48 + gamma0.85のフェザーで半透明の縁と懐中電灯のハロを滑らかに。従来の二値（0/255）で出ていた暗い縁の硬いノイズと、床に落ちる黒い染みを解消。</p>
-      <p><span class="pill">アニメ改善</span> 各フレームの足裏（alpha>20の最下点）を検出し、統一セル 173×219 の「足元基準（ax=86, ay=209）」へセンタリング＆ボトム揃え。フレームごとの幅/高さ差による左右・上下のブルつきを0に。表示は統一タイルから <code>drawImage(sx,sy,173,219)</code> で切り出し。</p>
-      <p><span class="pill">描画</span> DISPLAY_SCALE 0.46で約80×102pxに縮小。整数丸め <code>Math.round</code> + <code>imageSmoothingEnabled=false</code> でドット崩れ防止。歩行は移動距離に比例して進む（足滑り低減）、8fps相当、停止時は0番固定。</p>
-      <p style="opacity:.6">元画像のラベル領域は完全に除外。クリーンシートは原寸から直接再構築しており、色は一切手描き補正なしで忠実。</p>
+      <h3>8フレーム高品質スプライト — 編集内容</h3>
+      <img id="sheetPreview" src="public/clean-sheet.png" alt="clean sheet 8">
+      <p><span class="pill">8フレーム化</span> 元4コマの間を<b>中間フレーム生成</b>：上半身（頭）は前フレームを保持、下半身は50%ブレンドで滑らかに。4→8コマにすることで歩行が倍に滑らか。</p>
+      <p><span class="pill">透過改善</span> max(R,G,B)で lo14/hi48/gamma0.85フェザー。黒い縁のギザつきと床の染み、ハロの硬い輪郭を解消。</p>
+      <p><span class="pill">アニメ改善</span> 統一セル173×219へ足元基準(ax86,ay209)でボトム揃え。整数丸め＋ニアレストネイバーでドット保持。移動距離比例で進行し足滑りを抑制。</p>
+      <p style="opacity:.6">左ラベル完全除外／原色忠実。4コマ版は public/clean-sheet-4.png に保持。</p>
     </div>
   </div>
 </div>
@@ -77,20 +77,20 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const wrap = document.getElementById('wrap');
 
-// ---- 高品質スプライト（統一タイル 173×219 / 足元アンカー固定） ----
-const SPRITE_SRC = "public/clean-sheet.png"; // HQクリーンシート（透過フェザー済み、足元統一）
+// ---- 8フレーム高品質スプライト（統一タイル 173×219 / 足元アンカー固定） ----
+const SPRITE_SRC = "public/clean-sheet.png"; // 8フレーム版（1384×876）透過フェザー済み
 const SPRITE = {
   tileW: 173,
   tileH: 219,
   ax: 86,
   ay: 209,
-  // 4方向×4コマの左上座標（clean-sheet内のタイル原点）
-  // row 0: down, 1: up, 2: left, 3: right
+  frames: 8,
+  // row 0: down, 1: up, 2: left, 3: right / col 0..7
   getFrame(dir, idx){
-    const cols = 4;
     const dirRow = {down:0, up:1, left:2, right:3}[dir] ?? 0;
+    const c = ((idx % 8) + 8) % 8;
     return {
-      sx: idx * 173,
+      sx: c * 173,
       sy: dirRow * 219,
       sw: 173,
       sh: 219
@@ -342,18 +342,14 @@ function tick(now){
     if(ix!==0 && iy!==0) movedDist *= 0.72;
   }
 
-  // アニメーション（距離比例：約18pxで1コマ進む＝自然な歩幅）
+  // アニメーション（8フレーム・距離比例で足滑り低減）
   if(moving && movedDist>0){
-    animAcc += movedDist * 0.16; // 調整値：0.16で約6.25px/コマではなく18px/コマ
-    // より自然にするため、速度に依存せず距離で進む
-    // 1歩あたりのピクセルを約14-18に
-    // animAcc 1で1フレーム進む
+    animAcc += movedDist * 0.30; // 8フレームなので 0.30で約3.3px/コマ（4フレーム時の2倍）
     while(animAcc >= 1){
       animAcc -= 1;
-      frame = (frame + 1) % 4;
+      frame = (frame + 1) % 8;
     }
   }else{
-    // 停止時は0番で固定、accはゆっくり戻す
     frame = 0;
     animAcc = 0;
   }
@@ -593,7 +589,7 @@ function render(){
   ctx.font="10px 'DotGothic16', monospace";
   ctx.fillStyle="rgba(220,210,190,.55)";
   ctx.textAlign="right";
-  const info = `${dir}  ${frame+1}/4  ${Math.round(px)},${Math.round(py)}  HQ`;
+  const info = `${dir}  ${frame+1}/8  ${Math.round(px)},${Math.round(py)}  8F-HQ`;
   ctx.fillText(info, cssW-10, cssH-10);
   ctx.restore();
 }
